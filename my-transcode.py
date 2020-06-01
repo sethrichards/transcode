@@ -21,7 +21,7 @@ argParser.add_argument('outfile')
 args = argParser.parse_args()
 
 # Always preserve English subtitles
-other_arg = "--add-subtitle eng"
+other_arg = "--quiet --add-subtitle eng"
 
 # Handle framerate argument
 if args.framerate:
@@ -75,15 +75,18 @@ if infile.endswith('.mkv'):
     if retval != 0:
         print
         print termcolor.colored('=========================== Transcode failed! ===========================', 'red')
+        print '\a'
         print
         sys.exit(-1)
     else:
         print
         print termcolor.colored('=========================== Transcode succeeded ===========================', 'green')
+        print '\a'
         print
 
     print termcolor.colored('=========================== Finished! ===========================', 'green')
     print
 else:
     print termcolor.colored('Input file not an MKV!', 'red')
+    print '\a'
     sys.exit(-1)
