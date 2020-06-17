@@ -23,7 +23,9 @@ with open(inputCsv) as csvFile:
     for row in csvReader:
         #print (row)
         inputMkv = row['InputDir'] + "/" + row['InputBaseName'] + row['InputTrackName'] + ".mkv"
-        outputMkv = row['OutputDir'] + "/" + row['OutputBaseName'] + " S" + row['OutputSeason'] + "E" + row['OutputEpisode'] + " - " + row['OutputEpName'] + ".mkv"
+        outputName = row['OutputDir'] + "/" + row['OutputBaseName'] + " S" + row['OutputSeason'] + "E" + row['OutputEpisode'] + " - " + row['OutputEpName']
+        outputMkv = outputName + '.mkv'
+        outputSrt = outputName + '.srt'
         frameRate = ""
         if row["FrameRate"] != "":
             frameRate = "-f " + row["FrameRate"] + " "
@@ -40,18 +42,33 @@ with open(inputCsv) as csvFile:
         #transStatus = 0
         transStatus = os.system(commandLine)
 
+        # Try to extract subtitles for this title
+        print ('Attempting to extract subtitles from ' + inputMkv + ' to ' + outputSrt)
+        subCmdLine = 'my-subextract.py \"' + inputMkv + '\" \"' + outputSrt + '\"'
+        print termcolor.colored("Subtitle Command: ", 'blue'), subCmdLine
+        #subStatus = 0
+        subStatus = os.system(subCmdLine)
+
         # Store the results for summary printout
-        transSummary = (inputMkv, outputMkv, transStatus)
+        transSummary = (inputMkv, outputName, transStatus, subStatus)
         summaryList.append(transSummary)
 
 print
-print (termcolor.colored('{:<35} {:<45} {:<10}'.format('Input File', 'Output File', 'Status'), 'blue'))
-print (termcolor.colored('{:=<90}'.format(''), 'blue'))
+formatStr = '{:<30} {:<70} {:<10} {:<10}'
+print (termcolor.colored(formatStr.format('Input File', 'Output Name', 'Encode', 'Subtitle'), 'blue'))
+print (termcolor.colored('{:=<120}'.format(''), 'blue'))
 for row in summaryList:
     if row[2] != 0:
-        print ('{:<35} {:<45} {:<10}'.format(row[0], os.path.basename(row[1]), termcolor.colored("Failed!", 'red')))
+        encodeStatus = termcolor.colored("Failed!", 'red')
     else:
-        print ('{:<35} {:<45} {:<10}'.format(row[0], os.path.basename(row[1]), termcolor.colored("Success!", 'green')))
+        encodeStatus = termcolor.colored("Success!", 'green')
+
+    if row[3] == 0:
+        subtitleStatus = termcolor.colored("No subs found", 'yellow')
+    else:
+        subtitleStatus = termcolor.colored(str(row[3]) + ' sub(s) found', 'green')
+
+    print (formatStr.format(row[0], os.path.basename(row[1]), encodeStatus, subtitleStatus))
 
 print
 
