@@ -64,7 +64,7 @@ outfile = os.path.abspath(args.outfile)
 # Do the actual transcoding!
 print termcolor.colored('=========================== Starting Transcode ===========================', 'cyan')
 
-if infile.endswith('.mkv'):
+if infile.endswith('.mkv') or infile.endswith('.ts'):
     print termcolor.colored('Input file: ', 'cyan'), infile
     print termcolor.colored('Output file: ', 'cyan'), outfile
     transcode_command = 'transcode-video %s %s %s "%s" -o "%s"' % (crop_arg, frame_arg, other_arg, infile, outfile)
