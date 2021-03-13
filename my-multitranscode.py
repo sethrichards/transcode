@@ -22,22 +22,32 @@ with open(inputCsv) as csvFile:
     csvReader = csv.DictReader(csvFile)
     for row in csvReader:
         #print (row)
+
+        # Build the filenames
         inputMkv = row['InputDir'] + "/" + row['InputBaseName'] + row['InputTrackName'] + ".mkv"
-        outputName = row['OutputDir'] + "/" + row['OutputBaseName'] + " S" + row['OutputSeason'] + "E" + row['OutputEpisode'] + " - " + row['OutputEpName']
+        outputName = row['OutputDir'] + "/" + row['OutputBaseName'] + " S" + row['OutputSeason'].zfill(2) + "E" + row['OutputEpisode'].zfill(2) + " - " + row['OutputEpName']
         outputMkv = outputName + '.mkv'
         outputSrt = outputName + '.srt'
+
+        # Frame rate
         frameRate = ""
         if row["FrameRate"] != "":
             frameRate = "-f " + row["FrameRate"] + " "
+
+        # Cropping
         crop = ""
         if row["Crop"] != "":
             crop = "-c " + row["Crop"] + " "
         otherParams = ""
-        if row["Params"] != "":
-            otherParams = row["Params"] + " "
-            otherParams = otherParams.replace('\"', '')
+
+        # Deinterlacing
+        deinterlace = ""
+        if row["Deinterlace"] != "":
+            deinterlace = "-d " + row["Deinterlace"] + " "
+
+        # Transcode!
         print "Transcoding " + inputMkv + " to " + outputMkv
-        commandLine = "my-transcode.py " + crop + frameRate + otherParams + " \"" + inputMkv + "\" \"" + outputMkv + "\""
+        commandLine = "my-transcode.py " + crop + frameRate + deinterlace + " \"" + inputMkv + "\" \"" + outputMkv + "\""
         print termcolor.colored("Transcode Command: ", 'blue'), commandLine
         #transStatus = 0
         transStatus = os.system(commandLine)
@@ -53,6 +63,7 @@ with open(inputCsv) as csvFile:
         transSummary = (inputMkv, outputName, transStatus, subStatus)
         summaryList.append(transSummary)
 
+# Print out a status summary
 print
 formatStr = '{:<30} {:<70} {:<10} {:<10}'
 print (termcolor.colored(formatStr.format('Input File', 'Output Name', 'Encode', 'Subtitle'), 'blue'))

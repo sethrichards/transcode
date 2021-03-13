@@ -11,10 +11,8 @@ argParser.add_argument('-f', '--framerate',
                        help='One of [film|ntsc|pal].')
 argParser.add_argument('-c', '--crop',
                        help='0 for no crop, otherwise output from "detect-crop". Defaults to "detect".')
-argParser.add_argument('--deinterlace', action="store_true",
-                       help='Pass --filter=deinterlace to Handbrake. Works better for live action.')
-argParser.add_argument('--detelecine', action="store_true",
-                       help='Pass --filter=detelecine to Handbrake. Works better for animation.')
+argParser.add_argument('-d', '--deinterlace',
+                       help='Deinterlace filter to use. One of [detelecine|deinterlace|decomb]')
 argParser.add_argument('infile')
 argParser.add_argument('outfile')
 
@@ -48,12 +46,14 @@ if args.crop:
 else:
     crop_arg = "--crop detect"
 
-# Deinterlacing etc
+# Handle deinterlacing argument
 if args.deinterlace:
-    other_arg += " --filter deinterlace"
-
-if args.detelecine:
-    other_arg += " --filter detelecine"
+    if args.deinterlace == 'deinterlace':
+        other_arg += " --filter deinterlace"
+    elif args.deinterlace == 'detelecine':
+        other_arg += " --filter detelecine"
+    elif args.deinterlace == 'decomb':
+        other_arg += " --filter decomb"
 
 #sys.exit(0)
 
