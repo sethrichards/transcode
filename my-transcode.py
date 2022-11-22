@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import sys
 import os
@@ -32,7 +32,7 @@ if args.framerate:
             "NTSC": "29.97",
         }
         #print frameNum.get(rate)
-        return frameNum.get(rate)
+        return (frameNum.get(rate))
     frame_arg = "--force-rate %s" % (getFramerate(args.framerate))
 else:
     frame_arg = ""
@@ -62,31 +62,31 @@ infile = os.path.abspath(args.infile)
 outfile = os.path.abspath(args.outfile)
 
 # Do the actual transcoding!
-print termcolor.colored('=========================== Starting Transcode ===========================', 'cyan')
+print (termcolor.colored('=========================== Starting Transcode ===========================', 'cyan'))
 
 if infile.endswith('.mkv') or infile.endswith('.ts'):
-    print termcolor.colored('Input file: ', 'cyan'), infile
-    print termcolor.colored('Output file: ', 'cyan'), outfile
+    print (termcolor.colored('Input file: ', 'cyan'), infile)
+    print (termcolor.colored('Output file: ', 'cyan'), outfile)
     transcode_command = 'transcode-video %s %s %s "%s" -o "%s"' % (crop_arg, frame_arg, other_arg, infile, outfile)
-    print termcolor.colored('Transcode Command: ', 'cyan'), transcode_command
+    print (termcolor.colored('Transcode Command: ', 'cyan'), transcode_command)
     print
     #retval = 1
     retval = os.system(transcode_command)
     if retval != 0:
         print
-        print termcolor.colored('=========================== Transcode failed! ===========================', 'red')
-        print '\a'
+        print (termcolor.colored('=========================== Transcode failed! ===========================', 'red'))
+        print ('\a')
         print
         sys.exit(-1)
     else:
         print
-        print termcolor.colored('=========================== Transcode succeeded ===========================', 'green')
-        print '\a'
+        print (termcolor.colored('=========================== Transcode succeeded ===========================', 'green'))
+        print ('\a')
         print
 
-    print termcolor.colored('=========================== Finished! ===========================', 'green')
+    print (termcolor.colored('=========================== Finished! ===========================', 'green'))
     print
 else:
-    print termcolor.colored('Input file not an MKV!', 'red')
-    print '\a'
+    print (termcolor.colored('Input file not an MKV!', 'red'))
+    print ('\a')
     sys.exit(-1)

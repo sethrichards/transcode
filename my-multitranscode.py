@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import sys
 import os
@@ -13,8 +13,8 @@ arguments = argParser.parse_args()
 
 inputCsv = arguments.inputCsv
 
-print termcolor.colored('=========================== Parsing Input CSV ===========================', 'blue')
-print termcolor.colored('Input CSV: ', 'blue'),  inputCsv
+print(termcolor.colored('=========================== Parsing Input CSV ===========================', 'blue'))
+print(termcolor.colored('Input CSV: ', 'blue'),  inputCsv)
 
 summaryList = []
 
@@ -46,16 +46,16 @@ with open(inputCsv) as csvFile:
             deinterlace = "-d " + row["Deinterlace"] + " "
 
         # Transcode!
-        print "Transcoding " + inputMkv + " to " + outputMkv
+        print("Transcoding " + inputMkv + " to " + outputMkv)
         commandLine = "my-transcode.py " + crop + frameRate + deinterlace + " \"" + inputMkv + "\" \"" + outputMkv + "\""
-        print termcolor.colored("Transcode Command: ", 'blue'), commandLine
+        print(termcolor.colored("Transcode Command: ", 'blue'), commandLine)
         #transStatus = 0
         transStatus = os.system(commandLine)
 
         # Try to extract subtitles for this title
-        print ('Attempting to extract subtitles from ' + inputMkv + ' to ' + outputSrt)
+        print('Attempting to extract subtitles from ' + inputMkv + ' to ' + outputSrt)
         subCmdLine = 'my-subextract.py \"' + inputMkv + '\" \"' + outputSrt + '\"'
-        print termcolor.colored("Subtitle Command: ", 'blue'), subCmdLine
+        print(termcolor.colored("Subtitle Command: ", 'blue'), subCmdLine)
         #subStatus = 0
         subStatus = os.system(subCmdLine)
 
