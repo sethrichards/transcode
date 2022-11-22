@@ -25,7 +25,10 @@ with open(inputCsv) as csvFile:
 
         # Build the filenames
         inputMkv = row['InputDir'] + "/" + row['InputBaseName'] + row['InputTrackName'] + ".mkv"
-        outputName = row['OutputDir'] + "/" + row['OutputBaseName'] + " S" + row['OutputSeason'].zfill(2) + "E" + row['OutputEpisode'].zfill(2) + " - " + row['OutputEpName']
+        outputDir = row['OutputDir'];
+        if (outputDir == ""):
+            outputDir = os.getcwd();
+        outputName = outputDir + "/" + row['OutputBaseName'] + " S" + row['OutputSeason'].zfill(2) + "E" + row['OutputEpisode'].zfill(2) + " - " + row['OutputEpName']
         outputMkv = outputName + '.mkv'
         outputSrt = outputName + '.srt'
 
