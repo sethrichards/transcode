@@ -13,10 +13,18 @@ argParser.add_argument('-c', '--crop',
                        help='0 for no crop, otherwise output from "detect-crop". Defaults to "detect".')
 argParser.add_argument('-d', '--deinterlace',
                        help='Deinterlace filter to use. One of [detelecine|deinterlace|decomb]')
+argParser.add_argument('-e', '--encoder',
+                       help='Encoder to use. Passed through to video_transcoding. Defaults to "x264".')
+argParser.add_argument('-n', '--dry-run', action='store_true',
+                       help='Dry run, don\'t actually call other-transcode')
+argParser.add_argument('-v', '--verbose', action='store_true',
+                       help='Enable verbose debug')
 argParser.add_argument('infile')
 argParser.add_argument('outfile')
 
 args = argParser.parse_args()
+if args.verbose:
+    print (termcolor.colored('Args:','magenta'), args)
 
 # Always preserve English subtitles
 other_arg = "--quiet --add-subtitle eng"
@@ -31,7 +39,8 @@ if args.framerate:
             "ntsc": "29.97",
             "NTSC": "29.97",
         }
-        #print frameNum.get(rate)
+        if args.verbose:
+            print (termcolor.colored("Framerate:", 'magenta'), frameNum.get(rate))
         return (frameNum.get(rate))
     frame_arg = "--force-rate %s" % (getFramerate(args.framerate))
 else:
@@ -55,7 +64,11 @@ if args.deinterlace:
     elif args.deinterlace == 'decomb':
         other_arg += " --filter decomb"
 
-#sys.exit(0)
+# Handle encoder argument
+if args.encoder:
+    encoder_arg = "--encoder %s" % (args.encoder)
+else:
+    encoder_arg = "--encoder x264"
 
 # Filenames should be left over
 infile = os.path.abspath(args.infile)
@@ -67,11 +80,15 @@ print (termcolor.colored('=========================== Starting Transcode =======
 if infile.endswith('.mkv') or infile.endswith('.ts'):
     print (termcolor.colored('Input file: ', 'cyan'), infile)
     print (termcolor.colored('Output file: ', 'cyan'), outfile)
-    transcode_command = 'transcode-video %s %s %s "%s" -o "%s"' % (crop_arg, frame_arg, other_arg, infile, outfile)
+    transcode_command = 'transcode-video %s %s %s %s "%s" -o "%s"' % (crop_arg, frame_arg, encoder_arg, other_arg, infile, outfile)
     print (termcolor.colored('Transcode Command: ', 'cyan'), transcode_command)
     print
-    #retval = 1
-    retval = os.system(transcode_command)
+
+    if (args.dry_run == False):
+        retval = os.system(transcode_command)
+    else:
+        retval = 1
+
     if retval != 0:
         print
         print (termcolor.colored('=========================== Transcode failed! ===========================', 'red'))
