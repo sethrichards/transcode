@@ -26,8 +26,8 @@ args = argParser.parse_args()
 if args.verbose:
     print (termcolor.colored('Args:','magenta'), args)
 
-# Always preserve English subtitles
-other_arg = "--quiet --add-subtitle eng"
+# Always preserve English subtitles, add all English audio
+other_arg = "--quiet --main-audio eng --add-audio eng --audio-width main=double --audio-width other=surround --add-subtitle eng"
 
 # Handle framerate argument
 if args.framerate:
