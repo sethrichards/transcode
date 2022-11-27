@@ -7,6 +7,8 @@ import termcolor
 import argparse
 
 argParser = argparse.ArgumentParser(description='Frontend for transcode-video')
+argParser.add_argument('-o', '--other', action='store_true',
+                       help='Use hardware transcoder (other-transcode script)')
 argParser.add_argument('-f', '--framerate',
                        help='One of [film|ntsc|pal].')
 argParser.add_argument('-c', '--crop',
@@ -26,8 +28,21 @@ args = argParser.parse_args()
 if args.verbose:
     print (termcolor.colored('Args:','magenta'), args)
 
-# Always preserve English subtitles, add all English audio
-other_arg = "--quiet --main-audio eng --add-audio eng --audio-width main=double --audio-width other=surround --add-subtitle eng"
+# Determine which script we're using and set defaults
+if args.other:
+    script_type   = "hw"
+    script_string = "other-transcode"
+    encoder_arg   = "--hevc --10-bit --eac3-aac"
+    crop_arg      = "--crop auto"
+    other_arg     = "--add-audio eng=surround --add-subtitle eng"
+else:
+    script_type   = "sw"
+    script_string = "transcode-video"
+    encoder_arg   = "--encoder x264"
+    crop_arg      = "--crop detect"
+    # Always preserve English subtitles, add all English audio
+    other_arg    = " --main-audio eng --add-audio eng --audio-width main=double --audio-width other=surround --add-subtitle eng --quiet"
+frame_arg = ""
 
 # Handle framerate argument
 if args.framerate:
@@ -42,9 +57,10 @@ if args.framerate:
         if args.verbose:
             print (termcolor.colored("Framerate:", 'magenta'), frameNum.get(rate))
         return (frameNum.get(rate))
-    frame_arg = "--force-rate %s" % (getFramerate(args.framerate))
-else:
-    frame_arg = ""
+    if (script_type == "sw"):
+        frame_arg = "--force-rate %s" % (getFramerate(args.framerate))
+    else:
+        frame_arg = "--rate %s" % (getFramerate(args.framerate))
 
 # Handle cropping argument
 if args.crop:
@@ -52,27 +68,37 @@ if args.crop:
         crop_arg = "--crop 0:0:0:0"
     else:
         crop_arg = "--crop %s" % (args.crop)
-else:
-    crop_arg = "--crop detect"
 
 # Handle deinterlacing argument
 if args.deinterlace:
     if args.deinterlace == 'deinterlace':
-        other_arg += " --filter deinterlace"
+        if (script_type == "sw"):
+            other_arg += " --filter deinterlace"
+        else:
+            other_arg += " --deinterlace"
     elif args.deinterlace == 'detelecine':
-        other_arg += " --filter detelecine"
+        if (script_type == "sw"):
+            other_arg += " --filter detelecine"
+        else:
+            other_arg += " --detelecine"
     elif args.deinterlace == 'decomb':
-        other_arg += " --filter decomb"
+        if (script_type == "sw"):
+            other_arg += " --filter decomb"
+        else:
+            print(termcolor.colored("WARNING: decomb argument not supported by other-transcode", 'red'))
 
 # Handle encoder argument
 if args.encoder:
     encoder_arg = "--encoder %s" % (args.encoder)
-else:
-    encoder_arg = "--encoder x264"
 
 # Filenames should be left over
 infile = os.path.abspath(args.infile)
+script_outfile = os.path.join(os.getcwd(), os.path.basename(infile))
 outfile = os.path.abspath(args.outfile)
+if (args.verbose):
+    print(termcolor.colored("Input File: ", 'magenta'), infile)
+    print(termcolor.colored("Script Output File: ", 'magenta'), script_outfile)
+    print(termcolor.colored("Output File: ", 'magenta'), outfile)
 
 # Do the actual transcoding!
 print (termcolor.colored('=========================== Starting Transcode ===========================', 'cyan'))
@@ -80,7 +106,7 @@ print (termcolor.colored('=========================== Starting Transcode =======
 if infile.endswith('.mkv') or infile.endswith('.ts'):
     print (termcolor.colored('Input file: ', 'cyan'), infile)
     print (termcolor.colored('Output file: ', 'cyan'), outfile)
-    transcode_command = 'transcode-video %s %s %s %s "%s" -o "%s"' % (crop_arg, frame_arg, encoder_arg, other_arg, infile, outfile)
+    transcode_command = '%s %s %s %s %s "%s"' % (script_string, crop_arg, frame_arg, encoder_arg, other_arg, infile)
     print (termcolor.colored('Transcode Command: ', 'cyan'), transcode_command)
     print
 
