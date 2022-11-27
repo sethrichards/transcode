@@ -2,6 +2,7 @@
 
 import sys
 import os
+import shutil
 import subprocess
 import termcolor
 import argparse
@@ -94,11 +95,15 @@ if args.encoder:
 # Filenames should be left over
 infile = os.path.abspath(args.infile)
 script_outfile = os.path.join(os.getcwd(), os.path.basename(infile))
+script_logfile = script_outfile + ".log"
 outfile = os.path.abspath(args.outfile)
+logfile = outfile + ".log"
 if (args.verbose):
     print(termcolor.colored("Input File: ", 'magenta'), infile)
     print(termcolor.colored("Script Output File: ", 'magenta'), script_outfile)
+    print(termcolor.colored("Script Log File: ", 'magenta'), script_logfile)
     print(termcolor.colored("Output File: ", 'magenta'), outfile)
+    print(termcolor.colored("Log File: ", 'magenta'), logfile)
 
 # Do the actual transcoding!
 print (termcolor.colored('=========================== Starting Transcode ===========================', 'cyan'))
@@ -113,7 +118,7 @@ if infile.endswith('.mkv') or infile.endswith('.ts'):
     if (args.dry_run == False):
         retval = os.system(transcode_command)
     else:
-        retval = 1
+        retval = 0
 
     if retval != 0:
         print
@@ -127,6 +132,11 @@ if infile.endswith('.mkv') or infile.endswith('.ts'):
         print ('\a')
         print
 
+        print (termcolor.colored('Moving output file: ', 'cyan'), "%s --> %s" % (os.path.basename(script_outfile), os.path.basename(outfile)))
+        print (termcolor.colored('Moving log file: ', 'cyan'), "%s --> %s" % (os.path.basename(script_logfile), os.path.basename(logfile)))
+        if (args.dry_run == False):
+            shutil.move(script_outfile, outfile)
+            shutil.move(script_logfile, logfile)
     print (termcolor.colored('=========================== Finished! ===========================', 'green'))
     print
 else:
