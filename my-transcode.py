@@ -90,7 +90,7 @@ if args.deinterlace:
 
 # Handle encoder argument
 if args.encoder:
-    encoder_arg = "--encoder %s" % (args.encoder)
+    encoder_arg = "%s" % (args.encoder)
 
 # Filenames should be left over
 infile = os.path.abspath(args.infile)
@@ -98,12 +98,14 @@ script_outfile = os.path.join(os.getcwd(), os.path.basename(infile))
 script_logfile = script_outfile + ".log"
 outfile = os.path.abspath(args.outfile)
 logfile = outfile + ".log"
+subfile = os.path.splitext(outfile)[0] + ".srt"
 if (args.verbose):
     print(termcolor.colored("Input File: ", 'magenta'), infile)
     print(termcolor.colored("Script Output File: ", 'magenta'), script_outfile)
     print(termcolor.colored("Script Log File: ", 'magenta'), script_logfile)
     print(termcolor.colored("Output File: ", 'magenta'), outfile)
     print(termcolor.colored("Log File: ", 'magenta'), logfile)
+    print(termcolor.colored("Sub File: ", 'magenta'), subfile)
 
 # Do the actual transcoding!
 print (termcolor.colored('=========================== Starting Transcode ===========================', 'cyan'))
@@ -137,6 +139,11 @@ if infile.endswith('.mkv') or infile.endswith('.ts'):
         if (args.dry_run == False):
             shutil.move(script_outfile, outfile)
             shutil.move(script_logfile, logfile)
+
+        sub_command = 'my-subextract.py "%s" "%s"' % (infile, subfile)
+        print (termcolor.colored('Subextract command: ', 'cyan'), sub_command)
+        if (args.dry_run == False):
+            os.system(sub_command)
     print (termcolor.colored('=========================== Finished! ===========================', 'green'))
     print
 else:
