@@ -40,6 +40,7 @@ for line in rawTracks:
             print('Extract command line', subprocess.list2cmdline(extractCmd))
         if (args.dry_run == False):
             extractProc = subprocess.Popen(extractCmd)
+            extractProc.wait(timeout=60)
 
 if (subsFound == 0):
     print ("No text subtitles found in file " + inputFile)
