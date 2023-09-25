@@ -8,6 +8,8 @@ import argparse
 import csv
 
 argParser = argparse.ArgumentParser()
+argParser.add_argument('-w', '--hardware', action='store_true',
+                       help='Use hardWare-accelerated HEVC encoder instead of AVC')
 argParser.add_argument('inputCsv')
 arguments = argParser.parse_args()
 
@@ -41,16 +43,19 @@ with open(inputCsv) as csvFile:
         crop = ""
         if row["Crop"] != "":
             crop = "-c " + row["Crop"] + " "
-        otherParams = ""
 
         # Deinterlacing
         deinterlace = ""
         if row["Deinterlace"] != "":
             deinterlace = "-d " + row["Deinterlace"] + " "
 
+        other_args = ""
+        if (arguments.hardware):
+            other_args += " -w "
+        
         # Transcode!
         print("Transcoding " + inputMkv + " to " + outputMkv)
-        commandLine = "my-transcode.py " + crop + frameRate + deinterlace + " \"" + inputMkv + "\" \"" + outputMkv + "\""
+        commandLine = "my-transcode.py " + crop + frameRate + deinterlace + other_args + " \"" + inputMkv + "\" \"" + outputMkv + "\""
         print(termcolor.colored("Transcode Command: ", 'blue'), commandLine)
         #transStatus = 0
         transStatus = os.system(commandLine)

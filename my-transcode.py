@@ -8,8 +8,6 @@ import termcolor
 import argparse
 
 argParser = argparse.ArgumentParser(description='Frontend for transcode-video')
-argParser.add_argument('-o', '--other', action='store_true',
-                       help='Use hardware transcoder (other-transcode script)')
 argParser.add_argument('-f', '--framerate',
                        help='One of [film|ntsc|pal].')
 argParser.add_argument('-c', '--crop',
@@ -18,6 +16,8 @@ argParser.add_argument('-d', '--deinterlace',
                        help='Deinterlace filter to use. One of [detelecine|deinterlace|decomb]')
 argParser.add_argument('-e', '--encoder',
                        help='Encoder to use. Passed through to video_transcoding. Defaults to "x264".')
+argParser.add_argument('-w', '--hardware', action='store_true',
+                       help='Use hardWare-accelerated HEVC encoder instead of AVC')
 argParser.add_argument('-n', '--dry-run', action='store_true',
                        help='Dry run, don\'t actually call other-transcode')
 argParser.add_argument('-v', '--verbose', action='store_true',
@@ -29,20 +29,38 @@ args = argParser.parse_args()
 if args.verbose:
     print (termcolor.colored('Args:','magenta'), args)
 
+use_old_transcode = False
+
+# Handle deinterlacing argument first, as it forces us to fall back to video-transcode
+other_arg =""
+if args.deinterlace:
+    print(termcolor.colored("Falling back to video-transcode to handle deinterlacing", "magenta"))
+    use_old_transcode = True
+    if args.deinterlace == 'deinterlace':
+        other_arg += " --filter deinterlace"
+    elif args.deinterlace == 'detelecine':
+        other_arg += " --filter detelecine"
+    elif args.deinterlace == 'decomb':
+        other_arg += " --filter decomb"
+
 # Determine which script we're using and set defaults
-if args.other:
-    script_type   = "hw"
+if (use_old_transcode == False):
     script_string = "other-transcode"
-    encoder_arg   = "--hevc --10-bit --eac3-aac"
+    if (args.hardware):
+        encoder_arg = "--hevc --10-bit --eac3-aac"
+    else:
+        encoder_arg = "--x264 --eac3-aac"
     crop_arg      = "--crop auto"
-    other_arg     = "--add-audio eng=surround --add-subtitle eng"
+    other_arg    += "--add-audio eng=surround --add-subtitle eng"
+    frame_fragment = "--rate"
 else:
     script_type   = "sw"
     script_string = "transcode-video"
     encoder_arg   = "--encoder x264"
     crop_arg      = "--crop detect"
     # Always preserve English subtitles, add all English audio
-    other_arg    = " --main-audio eng --add-audio eng --audio-width main=double --audio-width other=surround --add-subtitle eng --quiet"
+    other_arg    += " --main-audio eng --add-audio eng --audio-width main=double --audio-width other=surround --add-subtitle eng --quiet"
+    frame_fragment = "--force-rate"
 frame_arg = ""
 
 # Handle framerate argument
@@ -58,10 +76,7 @@ if args.framerate:
         if args.verbose:
             print (termcolor.colored("Framerate:", 'magenta'), frameNum.get(rate))
         return (frameNum.get(rate))
-    if (script_type == "sw"):
-        frame_arg = "--force-rate %s" % (getFramerate(args.framerate))
-    else:
-        frame_arg = "--rate %s" % (getFramerate(args.framerate))
+    frame_arg = frame_fragment + " %s" % (getFramerate(args.framerate))
 
 # Handle cropping argument
 if args.crop:
@@ -70,23 +85,6 @@ if args.crop:
     else:
         crop_arg = "--crop %s" % (args.crop)
 
-# Handle deinterlacing argument
-if args.deinterlace:
-    if args.deinterlace == 'deinterlace':
-        if (script_type == "sw"):
-            other_arg += " --filter deinterlace"
-        else:
-            other_arg += " --deinterlace"
-    elif args.deinterlace == 'detelecine':
-        if (script_type == "sw"):
-            other_arg += " --filter detelecine"
-        else:
-            other_arg += " --detelecine"
-    elif args.deinterlace == 'decomb':
-        if (script_type == "sw"):
-            other_arg += " --filter decomb"
-        else:
-            print(termcolor.colored("WARNING: decomb argument not supported by other-transcode", 'red'))
 
 # Handle encoder argument
 if args.encoder:
