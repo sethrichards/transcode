@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import sys
 import os
@@ -6,6 +6,10 @@ import subprocess
 import termcolor
 import argparse
 import csv
+
+# Script locations - may need to modify depending on installation
+transcode_script = "~/bin-local/transcode/my-transcode.py"
+subextract_script = "~/bin-local/transcode/my-subextract.py"
 
 argParser = argparse.ArgumentParser()
 argParser.add_argument('-w', '--hardware', action='store_true',
@@ -22,15 +26,18 @@ summaryList = []
 
 with open(inputCsv) as csvFile:
     csvReader = csv.DictReader(csvFile)
-    for row in csvReader:
+    csvList = list(csvReader)
+    num_records = len(csvList)
+    #for row in csvReader:
+    for record, row in enumerate(csvList):
         #print (row)
-
+        print (termcolor.colored("Processing file: ", 'blue'), f"{record + 1}/{num_records}")
         # Build the filenames
         inputMkv = row['InputDir'] + "/" + row['InputBaseName'] + row['InputTrackName'] + ".mkv"
         outputDir = row['OutputDir'];
         if (outputDir == ""):
             outputDir = os.getcwd();
-        outputName = outputDir + "/" + row['OutputBaseName'] + " S" + row['OutputSeason'].zfill(2) + "E" + row['OutputEpisode'].zfill(2) + " - " + row['OutputEpName']
+        outputName = outputDir + "/" + row['OutputBaseName'] + " S" + row['OutputSeason'].zfill(2) + "E" + row['OutputEpisode'].zfill(2) + " - " + row['OutputEpName'] + " " + row['OutputSuffix']
         outputMkv = outputName + '.mkv'
         outputSrt = outputName + '.srt'
 
@@ -55,14 +62,14 @@ with open(inputCsv) as csvFile:
         
         # Transcode!
         print("Transcoding " + inputMkv + " to " + outputMkv)
-        commandLine = "my-transcode.py " + crop + frameRate + deinterlace + other_args + " \"" + inputMkv + "\" \"" + outputMkv + "\""
+        commandLine =  transcode_script + " " + crop + frameRate + deinterlace + other_args + " \"" + inputMkv + "\" \"" + outputMkv + "\""
         print(termcolor.colored("Transcode Command: ", 'blue'), commandLine)
         #transStatus = 0
         transStatus = os.system(commandLine)
 
         # Try to extract subtitles for this title
         print('Attempting to extract subtitles from ' + inputMkv + ' to ' + outputSrt)
-        subCmdLine = 'my-subextract.py \"' + inputMkv + '\" \"' + outputSrt + '\"'
+        subCmdLine = subextract_script + ' \"' + inputMkv + '\" \"' + outputSrt + '\"'
         print(termcolor.colored("Subtitle Command: ", 'blue'), subCmdLine)
         #subStatus = 0
         subStatus = os.system(subCmdLine)

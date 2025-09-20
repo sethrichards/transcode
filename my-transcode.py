@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import sys
 import os
@@ -6,6 +6,11 @@ import shutil
 import subprocess
 import termcolor
 import argparse
+
+# Script locations - may need to modify depending on installation
+old_script = "/usr/local/bin/transcode-video"
+other_script = "~/bin-local/other_video_transcoding/other-transcode.rb"
+
 
 argParser = argparse.ArgumentParser(description='Frontend for transcode-video')
 argParser.add_argument('-f', '--framerate',
@@ -18,6 +23,8 @@ argParser.add_argument('-e', '--encoder',
                        help='Encoder to use. Passed through to video_transcoding. Defaults to "x264".')
 argParser.add_argument('-w', '--hardware', action='store_true',
                        help='Use hardWare-accelerated HEVC encoder instead of AVC')
+argParser.add_argument('-l', '--language',
+                       help='Add audio/subtitles for an additional language other than "eng".')
 argParser.add_argument('-n', '--dry-run', action='store_true',
                        help='Dry run, don\'t actually call other-transcode')
 argParser.add_argument('-v', '--verbose', action='store_true',
@@ -45,9 +52,9 @@ if args.deinterlace:
 
 # Determine which script we're using and set defaults
 if (use_old_transcode == False):
-    script_string = "other-transcode"
+    script_string = other_script
     if (args.hardware):
-        encoder_arg = "--hevc --10-bit --eac3-aac"
+        encoder_arg = "--x265 --hevc --10-bit --eac3-aac"
     else:
         encoder_arg = "--x264 --eac3-aac"
     crop_arg      = "--crop auto"
@@ -55,12 +62,12 @@ if (use_old_transcode == False):
     frame_fragment = "--rate"
 else:
     script_type   = "sw"
-    script_string = "transcode-video"
+    script_string = old_script
     encoder_arg   = "--encoder x264"
     crop_arg      = "--crop detect"
     # Always preserve English subtitles, add all English audio
     other_arg    += " --main-audio eng --add-audio eng --audio-width main=double --audio-width other=surround --add-subtitle eng --quiet"
-    frame_fragment = "--force-rate"
+    frame_fragment = " --force-rate"
 frame_arg = ""
 
 # Handle framerate argument
@@ -90,6 +97,10 @@ if args.crop:
 if args.encoder:
     encoder_arg = "%s" % (args.encoder)
 
+# Handle any extra languages
+if args.language:
+    other_arg += f" --add-audio {args.language} --add-subtitle {args.language}"
+
 # Filenames should be left over
 infile = os.path.abspath(args.infile)
 script_outfile = os.path.join(os.getcwd(), os.path.basename(infile))
@@ -104,6 +115,10 @@ if (args.verbose):
     print(termcolor.colored("Output File: ", 'magenta'), outfile)
     print(termcolor.colored("Log File: ", 'magenta'), logfile)
     print(termcolor.colored("Sub File: ", 'magenta'), subfile)
+
+if (os.path.isfile(outfile)):
+    print(termcolor.colored('Output file ', 'red'), f"{outfile}", termcolor.colored(' already exists! Exiting...', 'red'))
+    sys.exit(-1)
 
 # Do the actual transcoding!
 print (termcolor.colored('=========================== Starting Transcode ===========================', 'cyan'))
@@ -136,12 +151,16 @@ if infile.endswith('.mkv') or infile.endswith('.ts'):
         print (termcolor.colored('Moving log file: ', 'cyan'), "%s --> %s" % (os.path.basename(script_logfile), os.path.basename(logfile)))
         if (args.dry_run == False):
             shutil.move(script_outfile, outfile)
-            shutil.move(script_logfile, logfile)
+            if (os.path.exists(script_logfile)):
+                shutil.move(script_logfile, logfile)
+            else:
+                print(termcolor.colored('No log file found!', 'magenta'))
 
-        sub_command = 'my-subextract.py "%s" "%s"' % (infile, subfile)
+        sub_command = '~/bin-local/transcode/my-subextract.py "%s" "%s"' % (infile, subfile)
         print (termcolor.colored('Subextract command: ', 'cyan'), sub_command)
         if (args.dry_run == False):
             os.system(sub_command)
+            #subprocess.call(sub_command)
     print (termcolor.colored('=========================== Finished! ===========================', 'green'))
     print
 else:
